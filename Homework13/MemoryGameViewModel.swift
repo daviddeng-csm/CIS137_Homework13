@@ -14,9 +14,9 @@ import SwiftUI
 final class MemoryGameViewModel: ObservableObject {
     @Published private(set) var cards: [CardModel] = []
     @Published private(set) var gameCompleted: Bool = false
+    @Published private(set) var progress: Double = 0.0 // NEW: Progress tracking
     @Published var canFlip: Bool = true
     
-    // Keeps currently flipped (but not yet resolved) cards
     private var flippedCardIndices: [Int] = []
     
     init() {
@@ -24,7 +24,6 @@ final class MemoryGameViewModel: ObservableObject {
     }
     
     func setupGame() {
-        // Select 6 random pairs from halloween1 to halloween16
         let allImages = (1...16).map { "halloween\($0)" }
         let selectedImages = Array(allImages.shuffled().prefix(6))
         
@@ -35,47 +34,43 @@ final class MemoryGameViewModel: ObservableObject {
         }
         newCards.shuffle()
         
-        // Reset state
         DispatchQueue.main.async {
             withAnimation(.easeIn(duration: 0.3)) {
                 self.cards = newCards
                 self.flippedCardIndices = []
                 self.canFlip = true
                 self.gameCompleted = false
+                self.progress = 0.0 // NEW: Reset progress
             }
         }
     }
     
     func flipCard(_ card: CardModel) {
-        // Guard to find index and ensure flipping is allowed
         guard let index = cards.firstIndex(where: { $0.id == card.id }) else { return }
         guard canFlip, !cards[index].isFaceUp, !cards[index].isMatched else { return }
         
-        // Flip animation
         withAnimation(.easeInOut(duration: 0.33)) {
             cards[index].isFaceUp = true
         }
         flippedCardIndices.append(index)
         
-        // When two cards are face up, check match
         if flippedCardIndices.count == 2 {
             canFlip = false
             let firstIndex = flippedCardIndices[0]
             let secondIndex = flippedCardIndices[1]
             
             if cards[firstIndex].imageName == cards[secondIndex].imageName {
-                // Match found: mark matched after a short pause (so user sees both)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
                     withAnimation(.easeInOut(duration: 0.3)) {
                         self.cards[firstIndex].isMatched = true
                         self.cards[secondIndex].isMatched = true
                     }
+                    self.updateProgress() // Update progress when cards match
                     self.flippedCardIndices = []
                     self.canFlip = true
                     self.checkGameCompletion()
                 }
             } else {
-                // No match: flip back after a short delay
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     withAnimation(.easeInOut(duration: 0.33)) {
                         self.cards[firstIndex].isFaceUp = false
@@ -86,6 +81,13 @@ final class MemoryGameViewModel: ObservableObject {
                 }
             }
         }
+    }
+    
+    // Calculate and update progress
+    private func updateProgress() {
+        let matchedCount = cards.filter { $0.isMatched }.count
+        let totalCards = cards.count
+        progress = Double(matchedCount) / Double(totalCards)
     }
     
     private func checkGameCompletion() {

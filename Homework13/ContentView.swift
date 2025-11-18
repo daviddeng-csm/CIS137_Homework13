@@ -13,7 +13,6 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var vm = MemoryGameViewModel()
     
-    // 3-column grid
     private let columns: [GridItem] = Array(repeating: GridItem(.flexible()), count: 3)
     
     var body: some View {
@@ -23,7 +22,7 @@ struct ContentView: View {
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
-                .opacity(0.25)
+                .opacity(0.38)
             
             VStack(spacing: 12) {
                 // Header
@@ -37,6 +36,25 @@ struct ContentView: View {
                         .foregroundColor(.secondary)
                 }
                 .padding(.top, 12)
+                
+                // Progress View
+                VStack(spacing: 8) {
+                    ProgressView(value: vm.progress)
+                        .progressViewStyle(LinearProgressViewStyle(tint: .orange))
+                        .scaleEffect(x: 1, y: 1.5, anchor: .center)
+                        .padding(.horizontal, 30)
+                    
+                    HStack {
+                        Text("Progress: \(Int(vm.progress * 100))%")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text("\(vm.cards.filter { $0.isMatched }.count)/\(vm.cards.count) matched")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 30)
+                }
                 
                 // Card grid
                 ScrollView {
