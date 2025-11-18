@@ -19,7 +19,7 @@ struct CardView: View {
         ZStack {
             // Card container with conditional background color
             RoundedRectangle(cornerRadius: 12)
-                .fill(card.isMatched ? Color.gray.opacity(0.3) : Color.white)
+                .fill(card.isMatched ? Color.green.opacity(0.75) : Color.white)
                 .shadow(radius: 3)
             
             if card.isFaceUp || card.isMatched {
